@@ -8,8 +8,9 @@
 
 ```bash
 cd frontend
-npm install
+git pull --rebasenpm install
 ```
+<<<<<<< HEAD
 
 #### Mise en place de l'environnement
 
@@ -18,6 +19,9 @@ cd frontend
 cp .env.example .env
 ```
 
+=======
+aa
+>>>>>>> e165614 (pass)
 ### Développement
 
 ```bash
