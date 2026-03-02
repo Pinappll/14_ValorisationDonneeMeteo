@@ -7,7 +7,7 @@
 ```bash
 npm install
 ```
-aazeazeaeza sq
+aazeazeaeza sqqsd
 ### Développement
 
 ```bash
