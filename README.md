@@ -1,5 +1,5 @@
 [![Run backend & frontend tests](https://github.com/Pinappll/14_ValorisationDonneeMeteo/actions/workflows/ci-testing.yml/badge.svg)](https://github.com/Pinappll/14_ValorisationDonneeMeteo/actions/workflows/ci-testing.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/{owner}/{repo}/badge)](https://scorecard.dev/viewer/?uri=github.com/{owner}/{repo})
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Pinappll/14_ValorisationDonneeMeteo/badge)](https://scorecard.dev/viewer/?uri=github.com/Pinappll/14_ValorisationDonneeMeteo)
 
 # Valorisation Donnée Météo
 
