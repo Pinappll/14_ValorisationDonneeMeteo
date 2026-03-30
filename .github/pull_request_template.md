@@ -1,4 +1,3 @@
-## Type de PR
 - [ ] Bugfix
 - [ ] Feature
 - [ ] Refactor
