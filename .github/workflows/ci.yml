@@ -1,0 +1,128 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Add uv to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install backend dependencies
+        run: |
+          uv sync --extra dev
+          cp .env.example .env
+
+      - name: Start database
+        working-directory: backend/timescaledb-env
+        run: docker compose up -d --wait
+
+      - name: Run backend tests
+        run: uv run pytest
+
+      - name: Run backend linter
+        run: uv run ruff check .
+
+      - name: Generate backend test report
+        run: |
+          uv run pytest --junitxml=pytest-report.xml
+
+      - name: Run Python security scan
+        run: |
+          uvx pip-audit -f json -o pip-audit-report.json || true
+
+      - name: Upload backend reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: |
+            backend/pytest-report.xml
+            backend/pip-audit-report.json
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run frontend tests
+        run: npm run test:ci
+
+      - name: Run frontend linter
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+  docker-backend:
+    name: Build and scan backend image
+    runs-on: ubuntu-24.04
+    needs: [backend, frontend]
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build backend image
+        run: |
+          docker build -t ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA} ./backend
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+            gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | \
+            sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Scan backend image
+        run: |
+          trivy image --format json --output trivy-backend-report.json ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA} || true
+
+      - name: Upload docker scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-scan-report
+          path: trivy-backend-report.json
