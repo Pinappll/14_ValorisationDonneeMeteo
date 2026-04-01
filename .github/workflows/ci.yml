@@ -126,3 +126,24 @@ jobs:
         with:
           name: docker-scan-report
           path: trivy-backend-report.json
+  push-backend-image:
+    name: Push backend image to GHCR
+    runs-on: ubuntu-24.04
+    needs: [docker-backend]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        run: |
+          docker build -t ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA} ./backend
+          docker push ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA}
