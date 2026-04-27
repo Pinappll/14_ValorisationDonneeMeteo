@@ -1,0 +1,8 @@
+{
+    "@context": "https://openvex.dev/ns/v0.2.0",
+    "@id": "https://github.com/Pinappll/14_ValorisationDonneeMeteo/security/trivy.vex.json",
+    "author": "Pinappll",
+    "timestamp": "2025-01-01T00:00:00Z",
+    "version": 1,
+    "statements": []
+}
