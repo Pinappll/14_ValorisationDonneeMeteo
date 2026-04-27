@@ -12,6 +12,9 @@ permissions:
 
 jobs:
   backend:
+    permissions:
+      contents: read
+      packages: write
     name: Backend checks
     runs-on: ubuntu-24.04
 
@@ -90,6 +93,9 @@ jobs:
             backend/pip-audit-report.json
 
   frontend:
+    permissions:
+    contents: read
+
     name: Frontend checks
     runs-on: ubuntu-24.04
 
@@ -121,6 +127,9 @@ jobs:
         run: npm run build
 
   docker-backend:
+    permissions:
+      contents: read
+      packages: write
     name: Build and scan backend Docker image
     runs-on: ubuntu-24.04
     needs: [backend, frontend]
