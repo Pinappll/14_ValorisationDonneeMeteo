@@ -1,5 +1,6 @@
 [![CI/CD](https://github.com/Pinappll/14_ValorisationDonneeMeteo/actions/workflows/ci.yml/badge.svg)](https://github.com/Pinappll/14_ValorisationDonneeMeteo/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Pinappll/14_ValorisationDonneeMeteo/badge)](https://scorecard.dev/viewer/?uri=github.com/Pinappll/14_ValorisationDonneeMeteo)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12668/badge)](https://www.bestpractices.dev/projects/12668)
 
 # Valorisation Donnée Météo
 
