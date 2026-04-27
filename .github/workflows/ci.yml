@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload backend reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-reports
           path: |
@@ -168,7 +168,7 @@ jobs:
 
       - name: Upload Docker scan report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docker-scan-report
           path: trivy-backend-report.json
@@ -203,7 +203,7 @@ jobs:
           docker push ghcr.io/${GITHUB_REPOSITORY,,}-backend:latest
 
       - name: Upload VEX file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vex-file
           path: security/trivy.vex.json
