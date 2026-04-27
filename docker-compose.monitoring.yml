@@ -1,0 +1,78 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.25.0-pg17
+    container_name: timescaledb-monitoring
+    environment:
+      POSTGRES_USER: infoclimat
+      POSTGRES_PASSWORD: infoclimat2026
+      POSTGRES_DB: meteodb
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+    networks:
+      - bd_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infoclimat -d meteodb"]
+      interval: 10s
+      timeout: 20s
+      retries: 10
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend-monitoring
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "true"
+      SECRET_KEY: "django-insecure-monitoring-only"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
+      DB_NAME: meteodb
+      DB_USER: infoclimat
+      DB_PASSWORD: infoclimat2026
+      DB_HOST: timescaledb-monitoring
+      DB_PORT: "5432"
+      MOCKED_DATA: "true"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - app_net
+      - bd_net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - backend
+    networks:
+      - app_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - app_net
+
+volumes:
+  timescaledb-data:
+  grafana-data:
+
+networks:
+  app_net:
+  bd_net:
