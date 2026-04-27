@@ -8,13 +8,9 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   backend:
-    permissions:
-      contents: read
-      packages: write
     name: Backend checks
     runs-on: ubuntu-24.04
 
@@ -93,9 +89,6 @@ jobs:
             backend/pip-audit-report.json
 
   frontend:
-    permissions:
-    contents: read
-
     name: Frontend checks
     runs-on: ubuntu-24.04
 
@@ -127,12 +120,12 @@ jobs:
         run: npm run build
 
   docker-backend:
-    permissions:
-      contents: read
-      packages: write
     name: Build and scan backend Docker image
     runs-on: ubuntu-24.04
     needs: [backend, frontend]
+    permissions:
+      contents: read
+      packages: write
 
     outputs:
       image_tag: ${{ steps.meta.outputs.tag }}
@@ -185,6 +178,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [docker-backend]
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout
