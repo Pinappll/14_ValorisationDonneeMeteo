@@ -1,16 +1,15 @@
-FROM node:24-alpine AS build
+FROM dhi.io/node:24-debian13-dev AS build
 
 WORKDIR /app
 
 COPY package*.json .
-
-RUN npm install
+RUN npm install --legacy-peer-deps && \
+    npm install pinia echarts vue-echarts --legacy-peer-deps
 
 COPY . .
-
 RUN npm run build
 
-FROM node:24-alpine AS prod
+FROM dhi.io/node:24-debian13
 
 WORKDIR /app
 
@@ -20,4 +19,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD [ "node", ".output/server/index.mjs" ]
+CMD ["node", ".output/server/index.mjs"]
