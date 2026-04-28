@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload backend reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-reports
           path: |
@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload Docker scan report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docker-${{ matrix.service }}-scan-report
           path: trivy-${{ matrix.service }}-report.json
@@ -205,7 +205,7 @@ jobs:
 
       - name: Upload VEX file
         if: matrix.service == 'backend' # ← upload une seule fois
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vex-file
           path: security/trivy.vex.json
