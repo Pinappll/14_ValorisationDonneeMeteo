@@ -22,9 +22,9 @@ jobs:
       timescaledb:
         image: timescale/timescaledb:2.25.0-pg17
         env:
-          POSTGRES_USER: infoclimat
-          POSTGRES_PASSWORD: infoclimat2026
-          POSTGRES_DB: meteodb
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
         ports:
           - 5432:5432
         options: >-
@@ -65,9 +65,9 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_NAME: meteodb
-          DB_USER: infoclimat
-          DB_PASSWORD: infoclimat2026
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MOCKED_DATA: "false"
         run: |
           uv run pytest weather/tests/integration/ \
@@ -119,30 +119,27 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-  docker-backend:
-    name: Build and scan backend Docker image
+  docker:
+    name: Build and scan ${{ matrix.service }} Docker image
     runs-on: ubuntu-24.04
     needs: [backend, frontend]
     permissions:
       contents: read
       packages: write
 
-    outputs:
-      image_tag: ${{ steps.meta.outputs.tag }}
+    strategy:
+      matrix:
+        service: [backend, frontend]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set image tag
-        id: meta
-        run: echo "tag=${GITHUB_SHA}" >> $GITHUB_OUTPUT
-
-      - name: Build backend Docker image
+      - name: Build ${{ matrix.service }} Docker image
         run: |
           docker build \
-            -t ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA} \
-            ./backend
+            -t ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.service }}:${GITHUB_SHA} \
+            ./${{ matrix.service }}
 
       - name: Install Trivy
         run: |
@@ -157,30 +154,34 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y trivy
 
-      - name: Scan backend image with Trivy
+      - name: Scan ${{ matrix.service }} image with Trivy
         run: |
           trivy image \
             --format json \
-            --output trivy-backend-report.json \
+            --output trivy-${{ matrix.service }}-report.json \
             --severity CRITICAL,HIGH \
             --exit-code 0 \
-            ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA}
+            ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.service }}:${GITHUB_SHA}
 
       - name: Upload Docker scan report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: docker-scan-report
-          path: trivy-backend-report.json
+          name: docker-${{ matrix.service }}-scan-report
+          path: trivy-${{ matrix.service }}-report.json
 
-  push-backend-image:
-    name: Push backend image to GHCR
+  push-image:
+    name: Push ${{ matrix.service }} image to GHCR
     runs-on: ubuntu-24.04
-    needs: [docker-backend]
+    needs: [docker]
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
+
+    strategy:
+      matrix:
+        service: [backend, frontend]
 
     steps:
       - name: Checkout
@@ -193,16 +194,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Build and push ${{ matrix.service }} image
         run: |
           docker build \
-            -t ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA} \
-            -t ghcr.io/${GITHUB_REPOSITORY,,}-backend:latest \
-            ./backend
-          docker push ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA}
-          docker push ghcr.io/${GITHUB_REPOSITORY,,}-backend:latest
+            -t ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.service }}:${GITHUB_SHA} \
+            -t ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.service }}:latest \
+            ./${{ matrix.service }}
+          docker push ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.service }}:${GITHUB_SHA}
+          docker push ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.service }}:latest
 
       - name: Upload VEX file
+        if: matrix.service == 'backend' # ← upload une seule fois
         uses: actions/upload-artifact@v4
         with:
           name: vex-file
